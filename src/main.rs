@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::task::{Context, Poll};
 
 use async_trait::async_trait;
-use enclavia_protocol::attestation::Pcrs;
+use enclavia::{Pcrs, UpgradedStream};
 use pingora_core::connectors::l4::Connect as L4Connect;
 use pingora_core::prelude::*;
 use pingora_core::protocols::l4::socket::SocketAddr;
@@ -15,24 +15,22 @@ use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 use tracing::error;
 
 use pingora_enclavia::config::Config;
-use pingora_enclavia::tunnel::{AttestedTunnel, TunnelConfig};
+use pingora_enclavia::tunnel::{self, TunnelConfig};
 
 #[derive(Debug)]
 struct EnclaviaConnect {
     upstream_url: String,
     pcrs: Pcrs,
     debug_mode: bool,
-    extra_headers: Vec<(String, String)>,
 }
 
 #[async_trait]
 impl L4Connect for EnclaviaConnect {
     async fn connect(&self, _addr: &SocketAddr) -> pingora_core::Result<PStream> {
-        let tunnel = AttestedTunnel::connect(TunnelConfig {
+        let stream = tunnel::connect(TunnelConfig {
             url: self.upstream_url.clone(),
             pcrs: self.pcrs.clone(),
             debug_mode: self.debug_mode,
-            extra_headers: self.extra_headers.clone(),
         })
         .await
         .map_err(|e| {
@@ -42,14 +40,14 @@ impl L4Connect for EnclaviaConnect {
                 e,
             )
         })?;
-        let virt = TunnelSocket { inner: tunnel };
+        let virt = TunnelSocket { inner: stream };
         Ok(VirtualSocketStream::new(Box::new(virt)).into())
     }
 }
 
 #[derive(Debug)]
 struct TunnelSocket {
-    inner: AttestedTunnel,
+    inner: UpgradedStream,
 }
 
 impl AsyncRead for TunnelSocket {
@@ -123,15 +121,16 @@ impl ProxyHttp for EnclaviaProxy {
             String::new(),
         );
 
-        let mut extra_headers = Vec::new();
-        if let Some(host) = &self.cfg.enclave_host {
-            extra_headers.push(("X-Enclave-Host".to_string(), host.clone()));
-        }
+        // The SDK no longer routes its own custom headers through the WSS
+        // upgrade: production traffic terminates at nginx, which already
+        // stamps `X-Enclave-Host` from the wildcard subdomain before
+        // hitting the router. The local-loopback smoke path in this crate
+        // talks to the in-process noise responder directly with no router
+        // in between, so it doesn't need the header either.
         let connector = EnclaviaConnect {
             upstream_url: self.cfg.upstream_url.clone(),
             pcrs: self.pcrs.clone(),
             debug_mode: self.cfg.debug_mode,
-            extra_headers,
         };
         peer.options.custom_l4 = Some(Arc::new(connector));
         peer.options.connection_timeout = Some(std::time::Duration::from_secs(15));
