@@ -1,0 +1,43 @@
+[package]
+name = "pingora-enclavia"
+version = "0.0.1"
+edition = "2021"
+license = "Apache-2.0 OR MIT"
+description = "Pingora-based proxy with an attested Noise tunnel to a Nitro enclave."
+publish = false
+
+[[bin]]
+name = "pingora-enclavia"
+path = "src/main.rs"
+
+[features]
+default = []
+
+[dependencies]
+enclavia-protocol = { path = "/home/afilini/workspace/enclavia/enclavia-protocol", default-features = false, features = ["async-transport", "test-utils"] }
+
+pingora-core = "0.8"
+pingora-proxy = "0.8"
+
+async-trait = "0.1"
+tokio = { version = "1", features = ["net", "io-util", "macros", "rt-multi-thread", "time", "sync"] }
+tokio-tungstenite = { version = "0.26", features = ["rustls-tls-native-roots"] }
+rustls = { version = "0.23", features = ["ring"] }
+futures-util = "0.3"
+
+ciborium = "0.2"
+snow = "0.9"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+
+hex = "0.4"
+thiserror = "2"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full", "test-util"] }
+tungstenite = "0.26"
+sha1 = "0.10"
+base64 = "0.22"
