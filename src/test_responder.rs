@@ -30,12 +30,12 @@ pub async fn run_http_echo(sock: TcpStream) {
     }
 }
 
-enum ResponderMode {
+pub enum ResponderMode {
     Echo,
     HttpEcho,
 }
 
-async fn run_inner(sock: TcpStream, mode: ResponderMode) -> anyhow::Result<()> {
+pub async fn run_inner(sock: TcpStream, mode: ResponderMode) -> anyhow::Result<()> {
     let mut ws = accept_async(sock).await?;
 
     let mut handshake = NoiseHandshake::responder()?;

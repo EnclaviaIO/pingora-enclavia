@@ -394,7 +394,7 @@ mod tests {
 
         tokio::spawn(async move {
             let (sock, _) = listener.accept().await.unwrap();
-            crate::test_responder::run(sock).await
+            crate::test_responder::run(sock).await;
         });
 
         let url = format!("ws://{}/", addr);

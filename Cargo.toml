@@ -10,6 +10,10 @@ publish = false
 name = "pingora-enclavia"
 path = "src/main.rs"
 
+[[bin]]
+name = "noise-echo"
+path = "test/noise-echo/src/main.rs"
+
 [features]
 default = []
 
@@ -18,6 +22,7 @@ enclavia-protocol = { path = "/home/afilini/workspace/enclavia/enclavia-protocol
 
 pingora-core = "0.8"
 pingora-proxy = "0.8"
+pingora-http = "0.8"
 
 async-trait = "0.1"
 tokio = { version = "1", features = ["net", "io-util", "macros", "rt-multi-thread", "time", "sync"] }

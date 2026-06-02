@@ -4,3 +4,4 @@ Cargo.lock.bak
 .direnv/
 result
 result-*
+test/.run-spike/
