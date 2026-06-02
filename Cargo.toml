@@ -42,9 +42,6 @@ notify = { version = "8", default-features = false, features = ["macos_kqueue"] 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 clap = { version = "4", features = ["derive", "env"] }
-# Carried for the legacy static config.toml path, removed once main.rs
-# pivots to --config-dir only.
-toml = "0.8"
 
 # Required by src/test_responder.rs, which is compiled into the lib and
 # linked by the `noise-echo` test binary. The production

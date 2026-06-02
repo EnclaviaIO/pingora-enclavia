@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Checkpoint 3 spike: live beta enclave smoke. Brings up pingora-enclavia
-# against $ENCLAVE_UUID and verifies a curl through it reaches the
-# workload (response body parses, PCRs present in the headers).
+# Checkpoint 3 spike, beta-shape: live beta enclave smoke. Brings up
+# pingora-enclavia against $ENCLAVE_UUID and verifies a curl through it
+# reaches the workload (response body parses, PCRs present in the
+# headers).
 #
 # Required env:
 #   ENCLAVE_UUID  uuid of a running beta enclave
@@ -22,14 +23,20 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LOG_DIR="$REPO_ROOT/test/.run-spike"
 mkdir -p "$LOG_DIR"
 
-CFG="$LOG_DIR/config-beta.toml"
-cat > "$CFG" <<EOF
-listen = "127.0.0.1:6188"
-upstream_url = "wss://$ENCLAVE_UUID.enclaves.beta.enclavia.io"
-pcr0 = "$PCR0"
-pcr1 = "$PCR1"
-pcr2 = "$PCR2"
-debug_mode = $DEBUG_MODE
+CFG_DIR="$LOG_DIR/proxy-targets-beta"
+rm -rf "$CFG_DIR"
+mkdir -p "$CFG_DIR"
+cat > "$CFG_DIR/$ENCLAVE_UUID.json" <<EOF
+{
+  "enclave_id": "$ENCLAVE_UUID",
+  "endpoint": "wss://$ENCLAVE_UUID.enclaves.beta.enclavia.io",
+  "pcrs": {
+    "pcr0": "$PCR0",
+    "pcr1": "$PCR1",
+    "pcr2": "$PCR2"
+  },
+  "debug_mode": $DEBUG_MODE
+}
 EOF
 
 cd "$REPO_ROOT"
@@ -39,7 +46,8 @@ pkill -f 'target/debug/pingora-enclavia' 2>/dev/null || true
 sleep 0.3
 
 PROXY_LOG="$LOG_DIR/proxy-beta.log"
-RUST_LOG="${RUST_LOG:-info}" "$REPO_ROOT/target/debug/pingora-enclavia" "$CFG" \
+RUST_LOG="${RUST_LOG:-info}" "$REPO_ROOT/target/debug/pingora-enclavia" \
+  --config-dir "$CFG_DIR" --listen 127.0.0.1:6188 \
   > "$PROXY_LOG" 2>&1 &
 PROXY_PID=$!
 trap "kill $PROXY_PID 2>/dev/null || true" EXIT
@@ -52,7 +60,9 @@ done
 CURL_HDR="$LOG_DIR/curl-beta.hdr"
 CURL_OUT="$LOG_DIR/curl-beta.out"
 
-curl -sS -D "$CURL_HDR" -o "$CURL_OUT" http://127.0.0.1:6188/
+curl -sS -D "$CURL_HDR" -o "$CURL_OUT" \
+  -H "Host: $ENCLAVE_UUID.enclaves.beta.enclavia.io" \
+  http://127.0.0.1:6188/
 
 echo "--- response headers ---"
 cat "$CURL_HDR"

@@ -63,6 +63,64 @@ to make that true).
 
 ## Status
 
-Spike. Goal of the first agent run: working tunnel against a local
-test responder, then a smoke against a live beta enclave (which we
-already verified end-to-end with the `enclavia` Rust SDK).
+Beta. The crate runs in production against the beta deployment as the
+attested upstream for `*.enclaves.beta.enclavia.io` traffic. Per-enclave
+configuration is driven from `/run/enclavia/proxy-targets/` (one JSON
+file per running enclave, written by `enclavia-backend`'s launcher).
+
+### Beta surface
+
+- Dynamic per-enclave targets via filesystem watch (`notify`).
+- Host-header → enclave UUID dispatch (leftmost label of `Host`).
+- Structured JSON logging via `tracing`, one info line per request,
+  error lines with a `failure_kind` field.
+- Configurable timeouts: `--tunnel-timeout-secs` (default 10s) for the
+  full WSS+Noise+attestation dance, `--request-timeout-secs` (default
+  30s) for the per-request upstream read/write window.
+- `X-Enclavia-Tunnel-Error: <kind>` header on failures
+  (`config_not_found`, `bad_config`, `tunnel_dial`).
+- `GET /healthz` returns 200 when the config dir is readable.
+- Graceful shutdown via SIGTERM (Pingora native, default 5s drain).
+- Underlying tunnel is the upstream `enclavia` SDK's
+  `Client::open_stream` primitive (no parallel implementation).
+
+### CLI
+
+```
+pingora-enclavia \
+  --config-dir /run/enclavia/proxy-targets \
+  --listen 127.0.0.1:6188 \
+  --tunnel-timeout-secs 10 \
+  --request-timeout-secs 30
+```
+
+All flags also accept env var equivalents (`PROXY_TARGETS_DIR`,
+`LISTEN`, `TUNNEL_TIMEOUT_SECS`, `REQUEST_TIMEOUT_SECS`).
+
+### Config file shape
+
+```json
+{
+  "enclave_id": "<uuid>",
+  "endpoint": "wss://<uuid>.enclaves.beta.enclavia.io",
+  "pcrs": { "pcr0": "<hex>", "pcr1": "<hex>", "pcr2": "<hex>" },
+  "debug_mode": true
+}
+```
+
+Filename is `<uuid>.json`; create/modify/delete events update the
+in-memory registry without restart.
+
+### Not in beta
+
+Out of scope for the first cut, called out so reviewers don't expect
+them:
+
+- Connection / tunnel pooling. Every request opens a fresh attested
+  tunnel.
+- HTTP/2 listener. HTTP/1.1 only.
+- Real production Nitro attestation. Today the `pcr_mismatch` /
+  `attestation_parse` / `noise_handshake` distinctions collapse into a
+  single `tunnel_dial` failure kind; pulling them apart needs SDK error
+  enrichment.
+- Prometheus metrics. Logging only.
