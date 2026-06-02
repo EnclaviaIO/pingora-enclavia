@@ -305,6 +305,7 @@ async fn pump_task(
                             warn!(error = %e, "tunnel: send_cbor StreamData failed");
                             break;
                         }
+                        drop(guard);
                         trace!(n, "tunnel: sent StreamData");
                     }
                     Err(e) => {
