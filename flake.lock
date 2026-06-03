@@ -25,16 +25,15 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1780414021,
+        "lastModified": 1780479976,
         "narHash": "sha256-XyzHDIFGk+QBR26cmzdV+qzY0i1DiaqBo68CQNIkeVA=",
         "owner": "EnclaviaIO",
         "repo": "enclavia",
-        "rev": "db50d9a59f70a02ba0597125bb5ede2b72dbf63e",
+        "rev": "91b538229717390fc95de8c0daf18dbd7177a839",
         "type": "github"
       },
       "original": {
         "owner": "EnclaviaIO",
-        "ref": "sdk-extract-open-stream",
         "repo": "enclavia",
         "type": "github"
       }

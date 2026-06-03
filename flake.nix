@@ -12,13 +12,10 @@
     # SDK flake. Cargo.toml uses absolute path deps to `enclavia` and
     # `enclavia-protocol` (so plain `cargo build` keeps working in the
     # dev shell); the Nix build patches them onto this input's store
-    # path at build time. Pinned by ref so the lockfile holds the rev —
+    # path at build time. Pinned by ref so the lockfile holds the rev;
     # bump alongside an SDK release.
-    #
-    # Tracking the `sdk-extract-open-stream` branch until enclavia#19
-    # merges; flip back to `master` after that lands.
     enclavia = {
-      url = "github:EnclaviaIO/enclavia/sdk-extract-open-stream";
+      url = "github:EnclaviaIO/enclavia";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
