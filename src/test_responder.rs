@@ -109,12 +109,7 @@ pub async fn run_inner(sock: TcpStream, mode: ResponderMode) -> anyhow::Result<(
                     }
                 }
                 ClientMessage::StreamClose { id, .. } => {
-                    send(
-                        &mut ws,
-                        &mut transport,
-                        &ServerMessage::StreamClose { id },
-                    )
-                    .await?;
+                    send(&mut ws, &mut transport, &ServerMessage::StreamClose { id }).await?;
                     let _ = ws.close(None).await;
                     return Ok(());
                 }
@@ -131,9 +126,7 @@ pub async fn run_inner(sock: TcpStream, mode: ResponderMode) -> anyhow::Result<(
     }
 }
 
-async fn recv_binary(
-    ws: &mut WebSocketStream<TcpStream>,
-) -> anyhow::Result<Vec<u8>> {
+async fn recv_binary(ws: &mut WebSocketStream<TcpStream>) -> anyhow::Result<Vec<u8>> {
     loop {
         match ws.next().await {
             Some(Ok(Message::Binary(b))) => return Ok(b.into()),
@@ -208,7 +201,5 @@ fn try_synthesize_http(accum: &mut Vec<u8>) -> Option<Vec<u8>> {
 }
 
 fn find_double_crlf(buf: &[u8]) -> Option<usize> {
-    buf.windows(4)
-        .position(|w| w == b"\r\n\r\n")
-        .map(|i| i + 4)
+    buf.windows(4).position(|w| w == b"\r\n\r\n").map(|i| i + 4)
 }

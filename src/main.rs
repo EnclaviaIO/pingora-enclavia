@@ -21,11 +21,18 @@ use pingora_enclavia::registry::{self, ProxyTarget, Registry, RegistryError};
 use pingora_enclavia::tunnel::{self, TunnelConfig};
 
 #[derive(Parser, Debug)]
-#[command(name = "pingora-enclavia", about = "Attested Pingora proxy for Nitro enclaves")]
+#[command(
+    name = "pingora-enclavia",
+    about = "Attested Pingora proxy for Nitro enclaves"
+)]
 struct Cli {
     /// Directory of per-enclave proxy-target JSON files written by the
     /// backend launcher. One file per running enclave, keyed by UUID.
-    #[arg(long, env = "PROXY_TARGETS_DIR", default_value = "/run/enclavia/proxy-targets")]
+    #[arg(
+        long,
+        env = "PROXY_TARGETS_DIR",
+        default_value = "/run/enclavia/proxy-targets"
+    )]
     config_dir: std::path::PathBuf,
 
     /// Address the HTTP listener binds on. Behind nginx in production
@@ -171,10 +178,7 @@ impl ProxyHttp for EnclaviaProxy {
             } else {
                 b"degraded".to_vec()
             };
-            session
-                .respond_error_with_body(200, body.into())
-                .await
-                .ok();
+            session.respond_error_with_body(200, body.into()).await.ok();
             return Ok(true);
         }
 
@@ -262,12 +266,12 @@ impl ProxyHttp for EnclaviaProxy {
         Self::CTX: Send + Sync,
     {
         if let Some(target) = ctx.target.as_ref() {
-            let _ = upstream_response
-                .insert_header("X-Enclavia-PCR0", &hex::encode(&target.pcrs.pcr0));
-            let _ = upstream_response
-                .insert_header("X-Enclavia-PCR1", &hex::encode(&target.pcrs.pcr1));
-            let _ = upstream_response
-                .insert_header("X-Enclavia-PCR2", &hex::encode(&target.pcrs.pcr2));
+            let _ =
+                upstream_response.insert_header("X-Enclavia-PCR0", &hex::encode(&target.pcrs.pcr0));
+            let _ =
+                upstream_response.insert_header("X-Enclavia-PCR1", &hex::encode(&target.pcrs.pcr1));
+            let _ =
+                upstream_response.insert_header("X-Enclavia-PCR2", &hex::encode(&target.pcrs.pcr2));
         }
         Ok(())
     }

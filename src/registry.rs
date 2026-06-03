@@ -120,7 +120,10 @@ impl Registry {
             }
             self.reload_file(&path).await;
         }
-        info!(count = self.inner.read().await.len(), "initial proxy-target scan complete");
+        info!(
+            count = self.inner.read().await.len(),
+            "initial proxy-target scan complete"
+        );
     }
 
     async fn reload_file(&self, path: &Path) {
@@ -200,8 +203,7 @@ impl Registry {
 
 fn load_one(path: &Path) -> Result<ProxyTarget, String> {
     let bytes = std::fs::read(path).map_err(|e| format!("read: {e}"))?;
-    let raw: ProxyTargetRaw =
-        serde_json::from_slice(&bytes).map_err(|e| format!("parse: {e}"))?;
+    let raw: ProxyTargetRaw = serde_json::from_slice(&bytes).map_err(|e| format!("parse: {e}"))?;
     let pcrs = Pcrs {
         pcr0: hex::decode(&raw.pcrs.pcr0).map_err(|e| format!("pcr0 hex: {e}"))?,
         pcr1: hex::decode(&raw.pcrs.pcr1).map_err(|e| format!("pcr1 hex: {e}"))?,
