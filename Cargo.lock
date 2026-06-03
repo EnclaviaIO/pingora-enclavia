@@ -1018,6 +1018,7 @@ dependencies = [
 [[package]]
 name = "enclavia"
 version = "0.1.0"
+source = "git+https://github.com/EnclaviaIO/enclavia?rev=91b538229717390fc95de8c0daf18dbd7177a839#91b538229717390fc95de8c0daf18dbd7177a839"
 dependencies = [
  "ciborium",
  "enclavia-protocol",
@@ -1036,6 +1037,7 @@ dependencies = [
 [[package]]
 name = "enclavia-protocol"
 version = "0.1.0"
+source = "git+https://github.com/EnclaviaIO/enclavia?rev=91b538229717390fc95de8c0daf18dbd7177a839#91b538229717390fc95de8c0daf18dbd7177a839"
 dependencies = [
  "attestation-doc-validation",
  "aws-nitro-enclaves-nsm-api",
@@ -2165,7 +2167,7 @@ dependencies = [
 
 [[package]]
 name = "pingora-enclavia"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",

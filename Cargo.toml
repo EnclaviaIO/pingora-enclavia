@@ -1,6 +1,6 @@
 [package]
 name = "pingora-enclavia"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0 OR MIT"
 description = "Pingora-based proxy with an attested Noise tunnel to a Nitro enclave."
@@ -20,11 +20,11 @@ default = []
 [dependencies]
 # Tunnel implementation lives in the upstream enclavia SDK
 # (`Client::open_stream`). pingora-enclavia just wraps the resulting
-# `UpgradedStream` as a pingora `Stream`. The protocol crate is still
-# pulled in transitively (for `Pcrs`) but pingora-enclavia no longer
-# depends on it directly; `enclavia` re-exports what we need.
-enclavia = { path = "/home/afilini/workspace/enclavia/enclavia" }
-enclavia-protocol = { path = "/home/afilini/workspace/enclavia/enclavia-protocol", default-features = false, features = ["async-transport", "test-utils"] }
+# `UpgradedStream` as a pingora `Stream`. Pinned by rev so a fresh
+# clone here is reproducible against a single commit of
+# EnclaviaIO/enclavia.
+enclavia = { git = "https://github.com/EnclaviaIO/enclavia", rev = "91b538229717390fc95de8c0daf18dbd7177a839" }
+enclavia-protocol = { git = "https://github.com/EnclaviaIO/enclavia", rev = "91b538229717390fc95de8c0daf18dbd7177a839", default-features = false, features = ["async-transport", "test-utils"] }
 
 pingora-core = "0.8"
 pingora-proxy = "0.8"
