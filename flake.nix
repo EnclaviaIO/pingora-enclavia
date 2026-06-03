@@ -8,20 +8,13 @@
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    # SDK flake. Cargo.toml uses absolute path deps to `enclavia` and
-    # `enclavia-protocol` (so plain `cargo build` keeps working in the
-    # dev shell); the Nix build patches them onto this input's store
-    # path at build time. Pinned by ref so the lockfile holds the rev;
-    # bump alongside an SDK release.
-    enclavia = {
-      url = "github:EnclaviaIO/enclavia";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
-  outputs = { self, nixpkgs, flake-utils, rust-overlay, enclavia }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs = { self, nixpkgs, flake-utils, rust-overlay }:
+    let
+      version = "0.1.0";
+    in
+    (flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
@@ -36,43 +29,50 @@
           rustc = rustToolchain;
         };
 
-        # Patch Cargo.toml so the SDK path deps point at the flake
-        # input's store path. The dev-shell build keeps using the
-        # absolute /home/afilini/workspace/enclavia path (so iterating
-        # locally needs zero flake updates); only the packaged build
-        # gets the rewrite.
         pingoraEnclavia = rustPlatform.buildRustPackage {
           pname = "pingora-enclavia";
-          version = "0.0.1";
+          inherit version;
 
           src = ./.;
 
           cargoLock = {
             lockFile = ./Cargo.lock;
-            outputHashes = { };
+            allowBuiltinFetchGit = true;
           };
 
           nativeBuildInputs = with pkgs; [ pkg-config cmake perl ];
           buildInputs = with pkgs; [ openssl ];
 
-          # Repoint absolute path deps onto the flake input. Done after
-          # the source is unpacked so the file we edit is local to the
-          # build, not the read-only flake source. Cargo.lock entries
-          # for path deps carry no hash so no lock adjustment is needed.
-          postPatch = ''
-            substituteInPlace Cargo.toml \
-              --replace "/home/afilini/workspace/enclavia/enclavia-protocol" "${enclavia}/enclavia-protocol" \
-              --replace "/home/afilini/workspace/enclavia/enclavia" "${enclavia}/enclavia"
-          '';
-
           # The noise-echo dev binary depends on the test_responder
           # module; building it inflates the closure for no production
           # value. Restrict the build to the proxy binary.
           cargoBuildFlags = [ "--bin" "pingora-enclavia" ];
-          # Tests need network for the echo loopback path, which the
-          # sandbox doesn't allow. We exercise tests via `cargo test`
-          # in the dev shell; the packaged build is binary-only.
           doCheck = false;
+        };
+
+        dockerImage = pkgs.dockerTools.buildLayeredImage {
+          name = "enclaviaio/pingora-enclavia";
+          tag = version;
+          contents = [
+            pingoraEnclavia
+            pkgs.cacert
+            pkgs.dockerTools.caCertificates
+          ];
+          config = {
+            Entrypoint = [ "${pingoraEnclavia}/bin/pingora-enclavia" ];
+            Cmd = [
+              "--config-dir"
+              "/etc/pingora-enclavia/targets"
+              "--listen"
+              "0.0.0.0:6188"
+            ];
+            ExposedPorts = {
+              "6188/tcp" = { };
+            };
+            Env = [
+              "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
+            ];
+          };
         };
 
       in {
@@ -91,6 +91,14 @@
         packages = {
           default = pingoraEnclavia;
           pingora-enclavia = pingoraEnclavia;
+          dockerImage = dockerImage;
         };
-      });
+      })) // {
+        nixosModules.default = { pkgs, lib, ... }: {
+          imports = [ ./nix/module.nix ];
+          config = lib.mkIf (self.packages ? ${pkgs.system}) {
+            services.pingora-enclavia.package = lib.mkDefault self.packages.${pkgs.system}.pingora-enclavia;
+          };
+        };
+      };
 }
