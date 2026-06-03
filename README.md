@@ -64,9 +64,65 @@ to make that true).
 ## Status
 
 Beta. The crate runs in production against the beta deployment as the
-attested upstream for `*.enclaves.beta.enclavia.io` traffic. Per-enclave
-configuration is driven from `/run/enclavia/proxy-targets/` (one JSON
-file per running enclave, written by `enclavia-backend`'s launcher).
+attested upstream for `*.enclaves.beta.enclavia.io` traffic, exposed
+as the hosted `/proxy/<path>` shape documented at
+[docs.enclavia.io](https://docs.enclavia.io). Per-enclave
+configuration is driven by a watched directory of JSON files (one
+per running enclave), written by whatever controller you front the
+proxy with; the public beta uses the `enclavia-backend` launcher.
+
+## Install
+
+Three supported install paths.
+
+### NixOS module
+
+```nix
+{
+  inputs.pingora-enclavia.url = "github:EnclaviaIO/pingora-enclavia";
+
+  outputs = { self, nixpkgs, pingora-enclavia, ... }: {
+    nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
+      modules = [
+        pingora-enclavia.nixosModules.default
+        ({ ... }: {
+          services.pingora-enclavia.enable = true;
+        })
+      ];
+    };
+  };
+}
+```
+
+Options live in `nix/module.nix`. The module installs the binary as a
+hardened systemd unit and creates a tmpfiles-managed targets directory
+(`/var/lib/pingora-enclavia/targets` by default). Front it with nginx
+or another proxy that terminates TLS and handles the WebSocket upgrade;
+see [docs.enclavia.io](https://docs.enclavia.io) for a worked example.
+
+### Docker
+
+```bash
+docker run \
+  -v $(pwd)/targets:/etc/pingora-enclavia/targets \
+  -p 6188:6188 \
+  enclaviaio/pingora-enclavia:0.1.0
+```
+
+The image reads target JSON files from `/etc/pingora-enclavia/targets`
+and listens on `0.0.0.0:6188` by default.
+
+### From source
+
+```bash
+cargo build --release --bin pingora-enclavia
+./target/release/pingora-enclavia --help
+```
+
+## Licensing
+
+Dual licensed under [Apache-2.0](./LICENSE-APACHE) or
+[MIT](./LICENSE-MIT) at your option.
 
 ### Beta surface
 
