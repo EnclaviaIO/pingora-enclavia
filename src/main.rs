@@ -267,11 +267,11 @@ impl ProxyHttp for EnclaviaProxy {
     {
         if let Some(target) = ctx.target.as_ref() {
             let _ =
-                upstream_response.insert_header("X-Enclavia-PCR0", &hex::encode(&target.pcrs.pcr0));
+                upstream_response.insert_header("X-Enclavia-PCR0", hex::encode(&target.pcrs.pcr0));
             let _ =
-                upstream_response.insert_header("X-Enclavia-PCR1", &hex::encode(&target.pcrs.pcr1));
+                upstream_response.insert_header("X-Enclavia-PCR1", hex::encode(&target.pcrs.pcr1));
             let _ =
-                upstream_response.insert_header("X-Enclavia-PCR2", &hex::encode(&target.pcrs.pcr2));
+                upstream_response.insert_header("X-Enclavia-PCR2", hex::encode(&target.pcrs.pcr2));
         }
         Ok(())
     }

@@ -81,7 +81,7 @@ mod tests {
             crate::test_responder::run(sock).await;
         });
 
-        let url = format!("ws://{}/", addr);
+        let url = format!("ws://{addr}/");
         let mut stream = connect(TunnelConfig {
             url,
             pcrs: expected,

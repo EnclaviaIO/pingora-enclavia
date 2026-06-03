@@ -30,6 +30,7 @@ pub async fn run_http_echo(sock: TcpStream) {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum ResponderMode {
     Echo,
     HttpEcho,

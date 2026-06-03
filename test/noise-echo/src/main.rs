@@ -20,10 +20,6 @@ async fn main() -> anyhow::Result<()> {
     eprintln!("noise-echo listening on {listen} mode={mode_str}");
     loop {
         let (sock, _) = listener.accept().await?;
-        let mode = match mode {
-            ResponderMode::Echo => ResponderMode::Echo,
-            ResponderMode::HttpEcho => ResponderMode::HttpEcho,
-        };
         tokio::spawn(async move {
             if let Err(e) = run_inner(sock, mode).await {
                 eprintln!("noise-echo conn err: {e}");
