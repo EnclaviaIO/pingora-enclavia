@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: build / clippy / test / nix
+    runs-on: [self-hosted, nix]
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Warm dev shell
+        run: nix develop --command true
+
+      - name: cargo fmt --check
+        run: nix develop --command cargo fmt --all -- --check
+
+      - name: cargo build --locked
+        run: nix develop --command cargo build --locked
+
+      - name: cargo clippy --all-targets -- -D warnings
+        run: nix develop --command cargo clippy --all-targets --locked -- -D warnings
+
+      - name: cargo test --locked
+        run: nix develop --command cargo test --locked
+
+      - name: nix build .#pingora-enclavia
+        run: nix build .#pingora-enclavia
+
+      - name: nix build .#dockerImage
+        run: nix build .#dockerImage
+
+      - name: nix flake check
+        run: nix flake check
