@@ -272,6 +272,15 @@ impl ProxyHttp for EnclaviaProxy {
                 upstream_response.insert_header("X-Enclavia-PCR1", hex::encode(&target.pcrs.pcr1));
             let _ =
                 upstream_response.insert_header("X-Enclavia-PCR2", hex::encode(&target.pcrs.pcr2));
+            // Tell the client whether the attestation behind those PCRs was a
+            // real AWS-CA-signed Nitro document or a debug/self-signed one. The
+            // PCRs alone don't distinguish them (a debug enclave's PCRs are real
+            // measurements, just not CA-signed), so without this a debug enclave
+            // is indistinguishable from a production one to the client.
+            let _ = upstream_response.insert_header(
+                "X-Enclavia-Debug-Mode",
+                if target.debug_mode { "true" } else { "false" },
+            );
         }
         Ok(())
     }
